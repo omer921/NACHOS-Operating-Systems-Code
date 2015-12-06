@@ -80,7 +80,7 @@ main(int argc, char **argv)
 {
     int argCount;			// the number of arguments 
 					// for a particular command
-    printf("running main\n"); 
+    //    printf("running main\n"); 
     DEBUG('t', "Entering main");
     (void) Initialize(argc, argv);
     
@@ -96,8 +96,7 @@ main(int argc, char **argv)
 #ifdef USER_PROGRAM
         if (!strcmp(*argv, "-x")) {        	// run a user program
 	    ASSERT(argc > 1);
-	    //            printf("running thread %s\n", (char*) *(argv+1));
-	    //printf("next thread to run %s\n", (char*) *(argv+3));
+	    // loads the user programs into the readyque by forking FProcess
 	    Thread *t = new Thread("fork thread");
             t->Fork(FProcess,(int)(*(argv + 1)));
             argCount = 2;

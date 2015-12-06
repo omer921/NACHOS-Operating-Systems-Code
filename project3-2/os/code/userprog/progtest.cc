@@ -46,11 +46,13 @@ StartProcess(char *filename)
 }
 
 
+// The same identical process to StartProcess except for it take a pointer as an integer so it can be forked 
+
 void
 FProcess(int filenames)
 {
   char* filename = (char*) filenames;
-  printf("FProcess for %s\n", filename);
+  //  printf("FProcess for %s\n", filename);
   OpenFile *executable = fileSystem->Open(filename);
   AddrSpace *space;
 

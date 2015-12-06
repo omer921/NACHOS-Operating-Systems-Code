@@ -77,17 +77,23 @@ AddrSpace::AddrSpace(OpenFile *executable)
 			+ UserStackSize;	// we need to increase the size
 						// to leave room for the stack
     numPages = divRoundUp(size, PageSize);
-     if (programLoaded > 0) {
-       //numPages = marker;
-       marker = iMarker+1;
+    
+
+    //this is where the marker is established
+    //if it is the first program that is being loaded then it will go into 
+    //the else statment, when in the else statement it will just set a marker
+    //so that the next program loaded will start at that marker
+    //if programLoaded  > 1 then just set the marker to the marker set in the
+    //else block and then increment iMarker by tge number of pages used
+    
+    if (programLoaded > 0) {
+       marker = iMarker;
        iMarker += numPages;
-       //marker += numPages+1;
-       printf("if: current marker is %i, now is %i \n", marker,iMarker);
        programLoaded++;
     } else {
        programLoaded++; 
       iMarker = numPages;
-      printf("else: current marker is %i, now is %i \n", marker,iMarker);
+      //      printf("else: current marker is %i, now is %i \n", marker,iMarker);
       }
     size = numPages * PageSize;
 
@@ -102,34 +108,49 @@ AddrSpace::AddrSpace(OpenFile *executable)
     pageTable = new TranslationEntry[numPages];
     //    printf("translating page table\n");
     for (i = 0; i < numPages; i++) {
-      pageTable[i].virtualPage = i;// + marker;	// for now, virtual page # = phys page #
-      pageTable[i].physicalPage = i + marker;
-	pageTable[i+marker].valid = TRUE;
-	pageTable[i+marker].use = FALSE;
-	pageTable[i+marker].dirty = FALSE;
-	pageTable[i+marker].readOnly = FALSE;  // if the code segment was entirely on 
+        pageTable[i].virtualPage = i;
+	
+	//set the physical page to the next available physical page which is the marker
+        pageTable[i].physicalPage = i + marker;
+	pageTable[i].valid = TRUE;
+	pageTable[i].use = FALSE;
+	pageTable[i].dirty = FALSE;
+	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
 					// a separate page, we could set its 
 					// pages to be read-only
-    }
     
+        
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
 //    bzero(machine->mainMemory, size); rm for Solaris
-    memset(machine->mainMemory, 0, size);
+	
+	//zero out that page specifically
+    memset(&machine->mainMemory[pageTable[i].physicalPage*PageSize], 0, PageSize);
+	   }
 
-// then, copy in the code and data segments into memory
+    int offset = noffH.code.virtualAddr % PageSize;
+    int offsetI = noffH.initData.virtualAddr % PageSize;
     
-    if (noffH.code.size > 0) {
+    //write the code to the specific memory location
+    
+if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 			noffH.code.virtualAddr, noffH.code.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
-			noffH.code.size, noffH.code.inFileAddr);
+	
+	
+	executable->ReadAt(&(machine->mainMemory[pageTable[noffH.code.virtualAddr/PageSize].physicalPage*PageSize+offset]),
+			   noffH.code.size, noffH.code.inFileAddr);
+
+
     }
     if (noffH.initData.size > 0) {
         DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
 			noffH.initData.virtualAddr, noffH.initData.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
-			noffH.initData.size, noffH.initData.inFileAddr);
+        
+
+	executable->ReadAt(&(machine->mainMemory[pageTable[noffH.initData.virtualAddr/PageSize].physicalPage*PageSize+offsetI]),
+			  noffH.initData.size, noffH.initData.inFileAddr);
+
     }
     
 }
@@ -158,7 +179,7 @@ void
 AddrSpace::InitRegisters()
 {
     int i;
-    printf("cleaing up registers: %i\n", NumTotalRegs);
+    //    printf("cleaing up registers: %i\n", NumTotalRegs);
     for (i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister(i, 0);
     //    int* translated = (int*) malloc(1*sizeof(int));

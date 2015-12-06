@@ -50,7 +50,7 @@ void
 FProcess(int filenames)
 {
   char* filename = (char*) filenames;
-  printf("starting process for %s\n", filename);
+  //  printf("FProcess for %s\n", filename);
   OpenFile *executable = fileSystem->Open(filename);
   AddrSpace *space;
 

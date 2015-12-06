@@ -5,7 +5,7 @@ main()
 {
   OpenFileId output = ConsoleOutput;
   //  printf("running user prog1\n");
-  char* str = "current user program: prog1";
+  char* str = "current user program: prog1 end \n";
   
   int i,j;
   for (i = 0; i < 5; i++)
